@@ -18,6 +18,13 @@ co-located with a reference monitor and produces:
 👉 See the example report: [`examples/demo_report/report.md`](examples/demo_report/report.md)
 (synthetic data with known, injected faults).
 
+> **Also in this repository — [`fungal-bgc/`](fungal-bgc/README.md):** a second sample
+> analysis, mining three public fungal genomes used for food protein for
+> secondary-metabolite biosynthetic gene clusters (antiSMASH 8 compared with MIBiG), with a
+> [13-page report](fungal-bgc/report/XERABINET_fungal_BGC_mini_report.pdf), a
+> [two-page summary](fungal-bgc/report/XERABINET_fungal_BGC_two_page_summary.pdf) and an
+> [Excel evidence matrix](fungal-bgc/report/XERABINET_fungal_BGC_evidence_matrix.xlsx).
+
 ## Quick start
 
 ```bash

@@ -1,0 +1,99 @@
+name: fungal-bgc
+
+# Mines public fungal genomes for secondary-metabolite biosynthetic gene clusters
+# (BGCs) with antiSMASH, compares them with MIBiG, and commits compact results.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "fungal-bgc/genomes.tsv"
+      - "fungal-bgc/scripts/**"
+      - ".github/workflows/fungal-bgc.yml"
+
+permissions:
+  contents: write
+
+env:
+  ANTISMASH_VERSION: "8.0.4"
+
+jobs:
+  mine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        accession: [GCF_041956525.1, GCF_000184455.2, GCF_900007375.1]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space for the antiSMASH databases
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: as
+          create-args: >-
+            -c conda-forge -c bioconda
+            antismash=${{ env.ANTISMASH_VERSION }}
+            python=3.11
+          cache-environment: true
+      - name: Download antiSMASH databases
+        shell: bash -el {0}
+        run: |
+          download-antismash-databases --database-dir "$HOME/asdb"
+          du -sh "$HOME/asdb"
+      - name: Fetch annotated genome from NCBI
+        run: |
+          acc=${{ matrix.accession }}
+          curl -sSfL --retry 5 -o g.zip \
+            "https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/${acc}/download?include_annotation_type=GENOME_GBFF"
+          unzip -q g.zip -d g
+          cp g/ncbi_dataset/data/${acc}/genomic.gbff "${acc}.gbff"
+          cp g/ncbi_dataset/data/assembly_data_report.jsonl "${acc}.assembly_report.jsonl"
+          grep -c '^LOCUS' "${acc}.gbff"
+      - name: Run antiSMASH (fungal mode)
+        shell: bash -el {0}
+        run: |
+          acc=${{ matrix.accession }}
+          mkdir -p out
+          antismash --version
+          antismash --databases "$HOME/asdb" --taxon fungi --genefinding-tool none \
+            --cb-knownclusters --cc-mibig --cpus 4 \
+            --output-dir "out/${acc}" --output-basename "${acc}" "${acc}.gbff"
+      - name: Summarise
+        shell: bash -el {0}
+        run: |
+          acc=${{ matrix.accession }}
+          python fungal-bgc/scripts/summarise_antismash.py "out/${acc}" "${acc}" "fungal-bgc/results/${acc}"
+          cp "${acc}.assembly_report.jsonl" "fungal-bgc/results/${acc}/assembly_report.jsonl"
+          antismash --version > "fungal-bgc/results/${acc}/antismash_version.txt"
+          ls -la "fungal-bgc/results/${acc}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ matrix.accession }}
+          path: fungal-bgc/results/${{ matrix.accession }}
+
+  commit:
+    needs: mine
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dl
+      - name: Commit results to this branch
+        run: |
+          mkdir -p fungal-bgc/results
+          for d in dl/results-*; do
+            acc=${d#dl/results-}
+            rm -rf "fungal-bgc/results/${acc}"
+            cp -r "$d" "fungal-bgc/results/${acc}"
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f fungal-bgc/results
+          git commit -m "fungal-bgc: results from run ${{ github.run_id }}" || echo "nothing to commit"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}"
