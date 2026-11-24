@@ -92,7 +92,7 @@ tests/                   pytest suite
 
 ## Author
 
-Maintained by **Andri Jesus Binet Alvarez, PhD (c)**, environmental scientist (aerosol physics and
+Maintained by **Andri Binet, PhD (c)**, environmental scientist (aerosol physics and
 chemistry), with lab experience in environmental microbiology and
 bioinformatics. Sensor-network QA, calibration and monthly data reports are
 available as a service: **modbinet@gmail.com**.
