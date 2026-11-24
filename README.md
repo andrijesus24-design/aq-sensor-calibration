@@ -92,8 +92,9 @@ tests/                   pytest suite
 
 ## Author
 
-Maintained by **[YOUR NAME], PhD (c)**, environmental scientist (aerosol physics and
-chemistry). Sensor-network QA, calibration and monthly data reports are
+Maintained by **Andri Jesus Binet Alvarez, PhD (c)**, environmental scientist (aerosol physics and
+chemistry), with lab experience in environmental microbiology and
+bioinformatics. Sensor-network QA, calibration and monthly data reports are
 available as a service: **[contact link]**.
 
 License: MIT.
