@@ -93,7 +93,7 @@ jobs:
           done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add fungal-bgc/results
+          git add -f fungal-bgc/results
           git commit -m "fungal-bgc: results from run ${{ github.run_id }}" || echo "nothing to commit"
           git pull --rebase origin "${GITHUB_REF_NAME}" || true
           git push origin "HEAD:${GITHUB_REF_NAME}"
